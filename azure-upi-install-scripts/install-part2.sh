@@ -14,13 +14,7 @@ fi
 
 source "$1"
 export PATH=$PWD:$PATH
-
-openshift-install wait-for bootstrap-complete --log-level debug
-
 export KUBECONFIG="$PWD/auth/kubeconfig"
-oc get nodes
-oc get clusteroperator
-
 export WORKER_IGNITION=`cat worker.ign | base64 | tr -d '\n'`
 
 az deployment group create -g $RESOURCE_GROUP \
@@ -28,10 +22,9 @@ az deployment group create -g $RESOURCE_GROUP \
    --parameters workerIgnition="$WORKER_IGNITION" \
    --parameters baseName="$INFRA_ID"
 
-(set +e; ./approve-csr.sh "$KUBECONFIG") &
+./check-vms-running.sh "$RESOURCE_GROUP"
 
-# Add the Ingress DNS Records
-oc -n openshift-ingress get service router-default
+(set +e; ./approve-csr.sh "$KUBECONFIG") &
 
 # Add a *.apps record to the public DNS zone:
 #

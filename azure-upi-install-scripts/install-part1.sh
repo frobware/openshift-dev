@@ -28,7 +28,7 @@ export PATH=$PWD:$PATH
 function print_env {
     set +u
     for var_name in CLUSTER_NAME AZURE_REGION BASE_DOMAIN BASE_DOMAIN_RESOURCE_GROUP PATH INFRA_ID RESOURCE_GROUP ACCOUNT_KEY OCP_ARCH VHD_URL PRINCIPAL_ID RESOURCE_GROUP_ID VHD_BLOB_URL STORAGE_ACCOUNT_ID AZ_ARCH PUBLIC_IP BOOTSTRAP_URL BOOTSTRAP_IGNITION MASTER_IGNITION; do
-        echo "export ${var_name}=\"${!var_name}\""
+	echo "export ${var_name}=\"${!var_name}\""
     done | tee -a "${CLUSTER_NAME:-cluster}-env.sh"
 }
 
@@ -163,4 +163,3 @@ openshift-install wait-for bootstrap-complete --log-level debug
 
 print_env
 ./install-part2.sh "${CLUSTER_NAME:-cluster}-env.sh"
-

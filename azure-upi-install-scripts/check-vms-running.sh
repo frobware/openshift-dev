@@ -12,6 +12,11 @@ function check_all_vms_status() {
     while true; do
         local vm_list
         vm_list=$(az vm list --resource-group "$resource_group" --query "[].{Name:name}" -o tsv)
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to list VMs in resource group $resource_group"
+            return 1
+        fi
+
         local all_running=true
 
         for vm_name in $vm_list; do
