@@ -23,8 +23,6 @@ export AZURE_REGION=`yq -r .platform.azure.region install-config.yaml`
 export BASE_DOMAIN=`yq -r .baseDomain install-config.yaml`
 export BASE_DOMAIN_RESOURCE_GROUP=`yq -r .platform.azure.baseDomainResourceGroupName install-config.yaml`
 
-export PATH=$PWD:$PATH
-
 function print_env {
     set +u
     for var_name in CLUSTER_NAME AZURE_REGION BASE_DOMAIN BASE_DOMAIN_RESOURCE_GROUP PATH INFRA_ID RESOURCE_GROUP ACCOUNT_KEY OCP_ARCH VHD_URL PRINCIPAL_ID RESOURCE_GROUP_ID VHD_BLOB_URL STORAGE_ACCOUNT_ID AZ_ARCH PUBLIC_IP BOOTSTRAP_URL BOOTSTRAP_IGNITION MASTER_IGNITION; do

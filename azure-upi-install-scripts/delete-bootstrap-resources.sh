@@ -13,7 +13,6 @@ if [ ! -f "$1" ]; then
 fi
 
 source "$1"
-export PATH=$PWD:$PATH
 
 az network nsg rule delete -g $RESOURCE_GROUP --nsg-name ${INFRA_ID}-nsg --name bootstrap_ssh_in
 az vm stop -g $RESOURCE_GROUP --name ${INFRA_ID}-bootstrap

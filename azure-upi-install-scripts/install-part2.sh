@@ -13,7 +13,6 @@ if [ ! -f "$1" ]; then
 fi
 
 source "$1"
-export PATH=$PWD:$PATH
 export KUBECONFIG="$PWD/auth/kubeconfig"
 export WORKER_IGNITION=`cat worker.ign | base64 | tr -d '\n'`
 
