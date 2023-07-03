@@ -17,6 +17,9 @@ for i in 01_vnet.json 02_storage.json 03_infra.json 04_bootstrap.json 05_masters
     fi
 done
 
+# We expect to find openshift-install in the current directory.
+export PATH=$PWD:$PATH
+
 # Extract data from install config
 export CLUSTER_NAME=`yq -r .metadata.name install-config.yaml`
 export AZURE_REGION=`yq -r .platform.azure.region install-config.yaml`
