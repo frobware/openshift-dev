@@ -12,6 +12,9 @@ if [ ! -f "$1" ]; then
     exit 1
 fi
 
+# We expect to find openshift-install in the current directory.
+export PATH=$PWD:$PATH
+
 # By default send SIGTERM to every process in the process group.
 # Overridden once we know the approve-csr.sh pid.
 approve_csr_subshell_pid=0
