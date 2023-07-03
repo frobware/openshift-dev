@@ -12,6 +12,11 @@ if [ ! -f "$1" ]; then
     exit 1
 fi
 
+# By default send SIGTERM to every process in the process group.
+# Overridden once we know the approve-csr.sh pid.
+approve_csr_subshell_pid=0
+trap 'kill $approve_csr_subshell_pid' INT EXIT
+
 source "$1"
 export KUBECONFIG="$PWD/auth/kubeconfig"
 export WORKER_IGNITION=`cat worker.ign | base64 | tr -d '\n'`
@@ -24,6 +29,7 @@ az deployment group create -g $RESOURCE_GROUP \
 ./check-vms-running.sh "$RESOURCE_GROUP"
 
 (set +e; ./approve-csr.sh "$KUBECONFIG") &
+approve_csr_subshell_pid=$!
 
 # Add a *.apps record to the public DNS zone:
 #
