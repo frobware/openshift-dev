@@ -16,8 +16,8 @@ The installation steps are automatic once the initial
 
 ## Download an OpenShift installer
 
-The installation scripts assume that the openshift-installer binary
-will be in the current directory.
+The installation scripts assume that the openshift-installer binary is
+in the current directory.
 
 	# Download an openshift-installer binary
 	$ wget https://openshift-release-artifacts.apps.ci.l2s4.p1.openshiftapps.com/4.14.0-0.nightly-2023-06-30-131338/openshift-install-linux-4.14.0-0.nightly-2023-06-30-131338.tar.gz
@@ -42,16 +42,17 @@ The remainder of the installation is automatic.
 
 	./install.sh
 
-This `install.sh` runs the remainder of the installation process via
-`script`. This will leave a `typescript` file in the current directory
-with all the steps and environment values listed. This can be used to
-observe installation progress but to also help diagnose installation
-failures.
+This `install.sh` runs the remainder of the installation process to
+completion--it also does this by re-exec'ing via `script(1)`. This
+will leave a `typescript` file in the current directory that lists all
+the steps and environment values generarted by the install steps. The
+`typescript` file can be used to both observe installation progress,
+and to help diagnose installation failures.
 
-The installer scripts will also create an environment file
+The `install.sh` script will also create an environment file
 (`$CLUSTER_NAME-env.sh`) in the current directory that captures
 pertinent environment variable values that are computed during
-installation.
+installation. This file is created when `install.sh` exits.
 
 For example:
 
@@ -66,4 +67,4 @@ For example:
 
 If installation fails, for whatever reason, you can source this file
 and continue the installation by manually running various steps from
-the installer-partX.sh scripts.
+the `install.sh` script.
