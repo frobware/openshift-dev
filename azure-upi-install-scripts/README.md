@@ -7,6 +7,12 @@ with some additional automation and retry logic (where necessary).
 The installation steps are automatic once the initial
 `openshift-install create install-config` step has been run.
 
+The install scripts have been exercised on both Linux and macOS.
+
+## Prerequisites
+
+The script requires `yq` at v4 or later.
+
 ## Prep
 
 	$ git clone https://github.com/frobware/openshift-dev

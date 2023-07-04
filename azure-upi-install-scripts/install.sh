@@ -3,6 +3,11 @@
 # This script follows the steps outlined in this document:
 #   https://github.com/openshift/installer/blob/master/docs/user/azure/install_upi.md
 
+# Avoiding Nix, Brew, et al.
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+fi
+
 # We expect to find openshift-install(1) (and optionally oc(1)) in the
 # current directory.
 export PATH=$PWD:$PATH
@@ -17,7 +22,11 @@ set -eux
 
 if [[ -z "${RUNNING_UNDER_SCRIPT:-}" ]]; then
     export RUNNING_UNDER_SCRIPT=1
-    exec script -c "$0 $@"
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+	exec script typescript "$0" "$@"
+    else
+	exec script -c "$0 $@"
+    fi
 fi
 
 export KUBECONFIG="$PWD/auth/kubeconfig"
@@ -52,12 +61,7 @@ export BASE_DOMAIN=`yq -r .baseDomain install-config.yaml`
 export BASE_DOMAIN_RESOURCE_GROUP=`yq -r .platform.azure.baseDomainResourceGroupName install-config.yaml`
 
 # Empty the compute pool
-python3 -c '
-import yaml;
-path = "install-config.yaml";
-data = yaml.full_load(open(path));
-data["compute"][0]["replicas"] = 0;
-open(path, "w").write(yaml.dump(data, default_flow_style=False))'
+yq e '.compute[0].replicas = 0' -i install-config.yaml
 
 # Create manifests
 openshift-install create manifests
@@ -68,21 +72,10 @@ rm -f openshift/99_openshift-cluster-api_worker-machineset-*.yaml
 rm -f openshift/99_openshift-machine-api_master-control-plane-machine-set.yaml
 
 # Make control-plane nodes unschedulable
-python3 -c '
-import yaml;
-path = "manifests/cluster-scheduler-02-config.yml";
-data = yaml.full_load(open(path));
-data["spec"]["mastersSchedulable"] = False;
-open(path, "w").write(yaml.dump(data, default_flow_style=False))'
+yq e '.spec.mastersSchedulable = false' -i manifests/cluster-scheduler-02-config.yml
 
 # Remove DNS Zones
-python3 -c '
-import yaml;
-path = "manifests/cluster-dns-02-config.yml";
-data = yaml.full_load(open(path));
-del data["spec"]["publicZone"];
-del data["spec"]["privateZone"];
-open(path, "w").write(yaml.dump(data, default_flow_style=False))'
+yq e 'del(.spec.publicZone, .spec.privateZone)' -i manifests/cluster-dns-02-config.yml
 
 # Resource Group Name and Infra ID
 export INFRA_ID=`yq -r '.status.infrastructureName' manifests/cluster-infrastructure-02-config.yml`
@@ -157,7 +150,12 @@ export PUBLIC_IP=`az network public-ip list -g $RESOURCE_GROUP --query "[?name==
 az network dns record-set a add-record -g $BASE_DOMAIN_RESOURCE_GROUP -z ${BASE_DOMAIN} -n api.${CLUSTER_NAME} -a $PUBLIC_IP --ttl 60
 
 # Launch the temporary cluster bootstrap
-bootstrap_url_expiry=`date -u -d "10 hours" '+%Y-%m-%dT%H:%MZ'`
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    bootstrap_url_expiry=`date -u -v+10H "+%Y-%m-%dT%H:%MZ"`
+else
+    bootstrap_url_expiry=`date -u -d "10 hours" '+%Y-%m-%dT%H:%MZ'`
+fi
+
 export BOOTSTRAP_URL=`az storage blob generate-sas -c 'files' -n 'bootstrap.ign' --https-only --full-uri --permissions r --expiry $bootstrap_url_expiry --account-name ${CLUSTER_NAME}sa --account-key $ACCOUNT_KEY -o tsv`
 export BOOTSTRAP_IGNITION=`jq -rcnM --arg v "3.1.0" --arg url $BOOTSTRAP_URL '{ignition:{version:$v,config:{replace:{source:$url}}}}' | base64 | tr -d '\n'`
 
