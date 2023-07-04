@@ -28,6 +28,9 @@ in the current directory.
 
 ## Create an OpenShift install-config.yaml
 
+**NOTE**: Cluster names cannot contain hypens. I have been using
+mynameDDMMHHSS as a template.
+
 	$ ./openshift-install create install-config
 	? SSH Public Key  [Use arrows to move, type to filter, ? for more help]
 	/home/aim/.ssh/id_rsa.pub
