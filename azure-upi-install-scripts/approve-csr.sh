@@ -17,6 +17,7 @@ while :
 do
     oc --insecure-skip-tls-verify --kubeconfig="$kubeconfig" get csr --no-headers | grep Pending | \
 	awk '{print $1}' | \
-	xargs --no-run-if-empty oc --insecure-skip-tls-verify --kubeconfig="$kubeconfig" adm certificate approve
+	grep . | \
+	xargs -I {} oc --insecure-skip-tls-verify --kubeconfig="$kubeconfig" adm certificate approve {}
     sleep 1
 done
