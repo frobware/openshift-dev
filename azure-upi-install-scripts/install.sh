@@ -14,7 +14,8 @@ export PATH=$PWD:$PATH
 
 if ! [[ -f install-config.yaml ]]; then
     echo "error: install-config.yaml is missing."
-    echo "error: first run 'openshift-install create install-config'"
+    echo "error: generate an install-config.yaml via:"
+    echo "./openshift-install create install-config'"
     exit 1
 fi
 
