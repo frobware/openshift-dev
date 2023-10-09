@@ -20,14 +20,32 @@
     packageSet;
 
     dynamicOverlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev:
-      let
-        packageSet = generateVersionedOpenShiftPackagesForSystem system;
-      in
-      builtins.listToAttrs (map (name: { inherit name; value = packageSet.${name}; }) (builtins.attrNames packageSet))
+    let
+      packageSet = generateVersionedOpenShiftPackagesForSystem system;
+    in
+    builtins.listToAttrs (map (name: { inherit name; value = packageSet.${name}; }) (builtins.attrNames packageSet))
     );
-  in
-  {
+
+    forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
+      pkgs = self.inputs.nixpkgs.legacyPackages.${system};
+    });
+  in {
     packages = nixpkgs.lib.genAttrs supportedSystems generateVersionedOpenShiftPackagesForSystem;
     overlays = dynamicOverlays;
+    devShells = forEachSupportedSystem ({ pkgs }: {
+      default = pkgs.mkShell {
+        buildInputs = [ pkgs.nix-prefetch pkgs.nix ];
+        packages = [
+          (pkgs.writeScriptBin "fetch-hash" (builtins.readFile ./fetch-hash.sh))
+        ];
+        shellHook = ''
+          # Setting NIX_PATH explicitly so that nix-prefetch-url can
+          # find the nixpkgs location. This is essential because a
+          # pure shell does not inherit NIX_PATH from the parent
+          # environment.
+          export NIX_PATH=nixpkgs=${pkgs.path}
+        '';
+      };
+    });
   };
 }

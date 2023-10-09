@@ -45,7 +45,7 @@ let
   };
 
   buildOpenShiftClientVersionFor = system: version: sha256: filename:
-  inputs.nixpkgs.legacyPackages.${system}.callPackage ./default.nix {
+  inputs.nixpkgs.legacyPackages.${system}.callPackage ./package.nix {
     inherit version sha256 filename;
   };
 in
