@@ -21,7 +21,7 @@ let
   buildHaproxyVersionFor = system: version: sha256: patches:
   let
     pkgs = inputs.nixpkgs.legacyPackages.${system};
-    package = pkgs.callPackage ./default.nix {
+    package = pkgs.callPackage ./package.nix {
       inherit version sha256 patches;
     };
   in
