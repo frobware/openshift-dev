@@ -24,9 +24,13 @@
     forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
       pkgs = self.inputs.nixpkgs.legacyPackages.${system};
     });
+
+    setDefaultPackageForSystem = system: self.packages.${system}.haproxy_2_6_13;
   in {
     packages = nixpkgs.lib.genAttrs supportedSystems generateHAProxyPackagesForSystem;
     overlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev: dynamicOverlays.${system} final prev);
+
+    defaultPackage = nixpkgs.lib.genAttrs supportedSystems setDefaultPackageForSystem;
 
     devShells = forEachSupportedSystem ({ pkgs }: {
       default = pkgs.mkShell {
