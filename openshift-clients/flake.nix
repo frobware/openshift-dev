@@ -29,9 +29,12 @@
     forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
       pkgs = self.inputs.nixpkgs.legacyPackages.${system};
     });
+
+    setDefaultPackageForSystem = system: self.packages.${system}.oc_4_13;
   in {
     packages = nixpkgs.lib.genAttrs supportedSystems generateVersionedOpenShiftPackagesForSystem;
     overlays = dynamicOverlays;
+    defaultPackage = nixpkgs.lib.genAttrs supportedSystems setDefaultPackageForSystem;
     devShells = forEachSupportedSystem ({ pkgs }: {
       default = pkgs.mkShell {
         buildInputs = [ pkgs.nix-prefetch pkgs.nix ];
