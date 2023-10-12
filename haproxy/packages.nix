@@ -11,7 +11,10 @@ let
     };
     "2.6.13" = {
       sha256 = "0hsj7zv1dxcz9ryr7hg1bczy7h9f488x307j5q9mg9mw7lizb7yn";
-      patches = [ ./2.6.13/0001-BUG-MINOR-fd-always-remove-late-updates-when-freeing.patch ];
+      patches = [
+        ./2.6.13/0001-BUG-MAJOR-http-reject-any-empty-content-length-heade.patch
+        ./2.6.13/0001-BUG-MINOR-fd-always-remove-late-updates-when-freeing.patch
+      ];
     };
     "2.8.3" = {
       sha256 = "sha256-nsxv/mepd9HtJ5EHu9q3kNc64qYmvDju4j+h9nhqdZ4=";
