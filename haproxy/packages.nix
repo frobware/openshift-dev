@@ -16,6 +16,12 @@ let
         ./2.6.13/0001-BUG-MINOR-fd-always-remove-late-updates-when-freeing.patch
       ];
     };
+    "2.6.14" = {
+      sha256 = "sha256-vT3Z+mA5HKCeEiXhrDFj5FvoPD9U8v12owryicxuT9Q=";
+    };
+    "2.6.15" = {
+      sha256 = "sha256-QfjhaV6S+v3/45aQpomT8aD19/BpMamemhU/dJ6jnP0=";
+    };
     "2.8.3" = {
       sha256 = "sha256-nsxv/mepd9HtJ5EHu9q3kNc64qYmvDju4j+h9nhqdZ4=";
     };
