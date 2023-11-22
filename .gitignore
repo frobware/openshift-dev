@@ -1,2 +1,3 @@
 /haproxy/result
 /openshift-clients/.direnv/
+/haproxy/.direnv/
