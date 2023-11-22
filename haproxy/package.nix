@@ -20,7 +20,7 @@ let
     };
   in {
     inherit version sha256 patches;
-    pname = "haproxy";
+    pname = "ocp-haproxy";
     src = source;
 
     buildInputs = with pkgs; [
