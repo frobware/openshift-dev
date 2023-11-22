@@ -47,9 +47,9 @@ let
     dontStrip = true;
 
     installPhase = ''
-      mkdir -p $out/sbin $out/src
+      mkdir -p $out/sbin $out/src-${version}
       install -m 0755 haproxy $out/sbin/ocp-haproxy-${version}-g
-      tar xvpf ${source.src} -C $out/src --strip-components=1
+      tar xvpf ${source.src} -C $out/src-${version} --strip-components=1
     '';
 
     preBuild = ''
