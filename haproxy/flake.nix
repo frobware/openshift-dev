@@ -25,7 +25,7 @@
       pkgs = self.inputs.nixpkgs.legacyPackages.${system};
     });
 
-    setDefaultPackageForSystem = system: self.packages.${system}.haproxy_2_6_13;
+    setDefaultPackageForSystem = system: self.packages.${system}.ocp_haproxy_2_6_13;
   in {
     packages = nixpkgs.lib.genAttrs supportedSystems generateHAProxyPackagesForSystem;
     overlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev: dynamicOverlays.${system} final prev);

@@ -41,11 +41,11 @@ let
 in
 builtins.listToAttrs (lib.flatten (lib.mapAttrsToList (version: value: [
   {
-    name = "haproxy_" + lib.replaceStrings ["."] ["_"] version;
+    name = "ocp_haproxy_" + lib.replaceStrings ["."] ["_"] version;
     value = (buildHaproxyVersionFor system version value.sha256 (value.patches or []))."${version}";
   }
   {
-    name = "haproxy_" + builtins.replaceStrings ["."] ["_"] version + "_debug";
+    name = "ocp_haproxy_" + builtins.replaceStrings ["."] ["_"] version + "_debug";
     value = (buildHaproxyVersionFor system version value.sha256 (value.patches or []))."${version}_debug";
   }
 ]) versions))

@@ -35,7 +35,7 @@ let
 
   buildHAProxy = stdenv.mkDerivation (commonBuild // {
     installPhase = ''
-      install -D -m 0755 haproxy $out/sbin/haproxy-${version}
+      install -D -m 0755 haproxy $out/sbin/ocp-haproxy-${version}
     '';
 
     makeFlags = commonMakeFlags;
@@ -48,7 +48,7 @@ let
 
     installPhase = ''
       mkdir -p $out/sbin $out/src
-      install -m 0755 haproxy $out/sbin/haproxy-${version}-g
+      install -m 0755 haproxy $out/sbin/ocp-haproxy-${version}-g
       tar xvpf ${source.src} -C $out/src --strip-components=1
     '';
 
