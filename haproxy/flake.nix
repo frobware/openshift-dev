@@ -1,5 +1,5 @@
 {
-  description = "A flake providing multiple versions of HAProxy built for OpenShift Ingress.";
+  description = "A flake offering various versions of HAProxy, built in the style of OpenShift Ingress.";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -25,7 +25,7 @@
       pkgs = self.inputs.nixpkgs.legacyPackages.${system};
     });
 
-    setDefaultPackageForSystem = system: self.packages.${system}.ocp_haproxy_2_6_13;
+    setDefaultPackageForSystem = system: self.packages.${system}.ocp_haproxy_2_8_5;
   in {
     packages = nixpkgs.lib.genAttrs supportedSystems generateHAProxyPackagesForSystem;
     overlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev: dynamicOverlays.${system} final prev);

@@ -25,6 +25,9 @@ let
     "2.8.3" = {
       sha256 = "sha256-nsxv/mepd9HtJ5EHu9q3kNc64qYmvDju4j+h9nhqdZ4=";
     };
+    "2.8.5" = {
+      sha256 = "sha256-P1RZxaWOCzQ6MurvftW+2dP8KdiqnhSzbJLJafwqYNk=";
+    };
   };
 
   buildHaproxyVersionFor = system: version: sha256: patches:
