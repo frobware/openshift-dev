@@ -63,13 +63,13 @@ let
     '';
 
     installPhase = ''
-      mkdir -p $out/bin $out/src-${version}
+      mkdir -p $out/bin $out/share/${version} $out/src-${version}
       install -m 0755 haproxy $out/bin/ocp-haproxy-${version}-g
       tar xf ${source.src} -C $out/src-${version} --strip-components=1
-      echo "directory $out/src-${version}" > $out/.gdbinit
-      # Create a wrapper script to invoke gdb with the .gdbinit file.
+      echo "directory $out/src-${version}" > $out/share/${version}/gdbinit
+      # Create a wrapper script to invoke gdb with the gdbinit file.
       echo '#!/usr/bin/env bash' > $out/bin/ocp-haproxy-${version}-gdb
-      echo "${pkgs.gdb}/bin/gdb -x $out/.gdbinit \"\$@\"" >> $out/bin/ocp-haproxy-${version}-gdb
+      echo "${pkgs.gdb}/bin/gdb -x $out/share/${version}/gdbinit \"\$@\"" >> $out/bin/ocp-haproxy-${version}-gdb
       chmod 755 $out/bin/ocp-haproxy-${version}-gdb
       ${pkgs.perl}/bin/perl ${print-compiler-includes}/bin/nix-print-compiler-includes --clangd > $out/src-${version}/.clangd
       echo "    - -I$out/src-${version}/include" >> $out/src-${version}/.clangd
