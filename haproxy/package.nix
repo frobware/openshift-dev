@@ -1,7 +1,7 @@
 { lib, fetchurl, pkgs, stdenv, version, sha256, patches, target ? "linux-glibc" }:
 
 let
-  print-compiler-includes = pkgs.writeScriptBin "nix-print-compiler-includes" "${builtins.readFile ./nix-print-compiler-includes.pl}";
+  print-compiler-includes = pkgs.writeScriptBin "print-compiler-includes" "${builtins.readFile ./print-compiler-includes.pl}";
 
   commonMakeFlags = [
     "CPU=generic"
@@ -33,8 +33,10 @@ let
     ];
 
     nativeBuildInputs = [
-      print-compiler-includes
       pkgs.bear
+      pkgs.jq
+
+      print-compiler-includes
     ];
 
     enableParallelBuilding = true;
@@ -63,17 +65,20 @@ let
     '';
 
     installPhase = ''
-      mkdir -p $out/bin $out/share/${version} $out/src-${version}
-      install -m 0755 haproxy $out/bin/ocp-haproxy-${version}-g
-      tar xf ${source.src} -C $out/src-${version} --strip-components=1
-      echo "directory $out/src-${version}" > $out/share/${version}/gdbinit
-      # Create a wrapper script to invoke gdb with the gdbinit file.
-      echo '#!/usr/bin/env bash' > $out/bin/ocp-haproxy-${version}-gdb
-      echo "${pkgs.gdb}/bin/gdb -x $out/share/${version}/gdbinit \"\$@\"" >> $out/bin/ocp-haproxy-${version}-gdb
-      chmod 755 $out/bin/ocp-haproxy-${version}-gdb
-      ${pkgs.perl}/bin/perl ${print-compiler-includes}/bin/nix-print-compiler-includes --clangd > $out/src-${version}/.clangd
-      echo "    - -I$out/src-${version}/include" >> $out/src-${version}/.clangd
-      install -m 0444 compile_commands.json $out/src-${version}/compile_commands.json
+      package="haproxy-${version}"
+      mkdir -p $out/bin $out/share/$package
+      install -m 0755 haproxy $out/bin/ocp-$package-g
+      tar xf ${source.src} -C $out/share
+      # Create a sentinel file for Emacs project.el.
+      touch $out/share/$package/.project
+      echo "directory $out/share/$package/src" > $out/share/$package/gdbinit
+      echo '#!/usr/bin/env bash' > $out/bin/ocp-$package-gdb
+      echo "${pkgs.gdb}/bin/gdb -x $out/share/$package/gdbinit \"\$@\"" >> $out/bin/ocp-$package-gdb
+      chmod 755 $out/bin/ocp-$package-gdb
+      ${pkgs.perl}/bin/perl ${print-compiler-includes}/bin/print-compiler-includes --clangd > $out/share/$package/.clangd
+      echo "    - -I$out/share/$package/include" >> $out/share/$package/.clangd
+      # Replace references to the ephemeral /build directory.
+      ${pkgs.jq}/bin/jq '[.[] | .directory |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'") | .file |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'") | .output |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'")]' compile_commands.json > "$out/share/$package/compile_commands.json"
     '';
   });
 in
