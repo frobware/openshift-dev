@@ -55,8 +55,10 @@ let
   in pkgs.stdenv.mkDerivation (source // rec {
     dontStrip = true;
 
+    hardeningDisable = [ "all" ];
+
     makeFlags = commonMakeFlags ++ [
-      "\"DEBUG_CFLAGS=-g -ggdb3 -Og -fno-omit-frame-pointer -fno-inline\""
+      "\"DEBUG_CFLAGS=-g -ggdb3 -O0 -fno-omit-frame-pointer -fno-inline\""
       "V=1"
     ];
 
