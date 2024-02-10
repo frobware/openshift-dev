@@ -3,40 +3,22 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs }:
-  let
-    supportedSystems = [ "aarch64-linux" "x86_64-linux" ];
-
-    generateHAProxyPackagesForSystem = system:
-    let
-      packageSet = import ./packages.nix {
-        system = system;
-        inputs = { inherit nixpkgs; };
-      };
-    in
-    packageSet;
-
-    dynamicOverlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev:
-    let
-      packageSet = generateHAProxyPackagesForSystem system;
-    in builtins.listToAttrs (map (name: { inherit name; value = packageSet.${name}; }) (builtins.attrNames packageSet)));
-
-    forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
-      pkgs = self.inputs.nixpkgs.legacyPackages.${system};
-    });
-
-    setDefaultPackageForSystem = system: self.packages.${system}.ocp_haproxy_2_8_5;
+  outputs = { self, nixpkgs, ... }: let
+    forAllSystems = function: nixpkgs.lib.genAttrs [ "aarch64-linux" "x86_64-linux" ] (
+      system: function system nixpkgs.legacyPackages.${system}
+    );
   in {
-    packages = nixpkgs.lib.genAttrs supportedSystems generateHAProxyPackagesForSystem;
-    overlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev: dynamicOverlays.${system} final prev);
-
-    defaultPackage = nixpkgs.lib.genAttrs supportedSystems setDefaultPackageForSystem;
-
-    devShells = forEachSupportedSystem ({ pkgs }: {
+    devShells = forAllSystems (system: pkgs: {
       default = pkgs.mkShell {
-        buildInputs = [ ];
-        packages = [ ];
+        buildInputs = [
+          self.packages.${system}.default.buildInputs
+        ];
+        nativeBuildInputs = [
+          pkgs.pkg-config
+        ];
         shellHook = ''
+          export SRC=${self.packages.${system}.default.src}
+          echo "HAProxy source is at: $SRC"
           # Setting NIX_PATH explicitly so that nix-prefetch-url can
           # find the nixpkgs location. This is essential because a
           # pure shell does not inherit NIX_PATH from the parent
@@ -44,6 +26,20 @@
           export NIX_PATH=nixpkgs=${pkgs.path}
         '';
       };
+    });
+
+    overlays = let
+      haproxyOverlay = final: prev: {
+        ocp-haproxy = self.packages.${final.system};
+      };
+    in {
+      default = haproxyOverlay;
+    };
+
+    packages = forAllSystems (system: pkgs: let
+      haproxyVersions = import ./versions.nix { inherit pkgs; };
+    in haproxyVersions // {
+      default = haproxyVersions.ocp-haproxy-2_8_5;
     });
   };
 }

@@ -1,7 +1,8 @@
-{ lib, fetchurl, pkgs, stdenv, version, sha256, patches, target ? "linux-glibc" }:
+{ fetchurl, pkgs, stdenv, version, sha256, patches, target ? "linux-glibc", debug ? false }:
 
 let
   print-compiler-includes = pkgs.writeScriptBin "print-compiler-includes" "${builtins.readFile ./print-compiler-includes.pl}";
+  bear = if debug then "${pkgs.bear}/bin/bear --" else "";
 
   commonMakeFlags = [
     "CPU=generic"
@@ -15,62 +16,45 @@ let
     "USE_ZLIB=1"
   ];
 
-  commonBuild = let
-    source = fetchurl {
-      url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/haproxy-${version}.tar.gz";
-      sha256 = sha256;
-    };
-  in {
-    inherit version sha256 patches;
-    pname = "ocp-haproxy";
-    src = source;
+  src = fetchurl {
+    url = "https://www.haproxy.org/download/${pkgs.lib.versions.majorMinor version}/src/haproxy-${version}.tar.gz";
+    inherit sha256;
+  };
 
+  commonBuildAttrs = {
+    inherit version patches src;
+    pname = "ocp-haproxy";
     buildInputs = with pkgs; [
       libxcrypt
       openssl_3
       pcre
       zlib
     ];
-
-    nativeBuildInputs = [
-      pkgs.bear
-      pkgs.jq
-
-      print-compiler-includes
-    ];
-
     enableParallelBuilding = true;
   };
 
-  buildHAProxy = stdenv.mkDerivation (commonBuild // {
-    installPhase = ''
-      install -D -m 0755 haproxy $out/bin/ocp-haproxy-${version}
-    '';
+  buildHAProxy = stdenv.mkDerivation (commonBuildAttrs // rec {
+    name = "ocp-haproxy-${version}${pkgs.lib.optionalString debug "-debug"}";
 
-    makeFlags = commonMakeFlags;
-  });
+    dontStrip = debug;
+    hardeningDisable = if debug then [ "all" ] else [];
 
-  buildHAProxyDebug = let
-    source = commonBuild;
-  in pkgs.stdenv.mkDerivation (source // rec {
-    dontStrip = true;
-
-    hardeningDisable = [ "all" ];
-
-    makeFlags = commonMakeFlags ++ [
+    debugMakeFlags = if debug then [
       "\"DEBUG_CFLAGS=-g -ggdb3 -O0 -fno-omit-frame-pointer -fno-inline\""
       "V=1"
-    ];
+    ] else [];
+
+    makeFlags = commonMakeFlags ++ debugMakeFlags;
 
     buildPhase = ''
-      ${pkgs.bear}/bin/bear -- make -j ${lib.concatStringsSep " " makeFlags}
+      ${bear} make -j ${pkgs.lib.concatStringsSep " " makeFlags}
     '';
 
-    installPhase = ''
+    installPhase = if debug then ''
       package="haproxy-${version}"
       mkdir -p $out/bin $out/share/$package
-      install -m 0755 haproxy $out/bin/ocp-$package-g
-      tar xf ${source.src} -C $out/share
+      install -m 0755 haproxy $out/bin/ocp-$package-debug
+      tar xf ${src} -C $out/share
       # Create a sentinel file for Emacs project.el.
       touch $out/share/$package/.project
       echo "directory $out/share/$package/src" > $out/share/$package/gdbinit
@@ -81,10 +65,8 @@ let
       echo "    - -I$out/share/$package/include" >> $out/share/$package/.clangd
       # Replace references to the ephemeral /build directory.
       ${pkgs.jq}/bin/jq '[.[] | .directory |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'") | .file |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'") | .output |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'")]' compile_commands.json > "$out/share/$package/compile_commands.json"
+    '' else ''
+      install -D -m 0755 haproxy $out/sbin/ocp-haproxy-${version}
     '';
   });
-in
-{
-  buildHAProxy = buildHAProxy;
-  buildHAProxyDebug = buildHAProxyDebug;
-}
+in buildHAProxy
