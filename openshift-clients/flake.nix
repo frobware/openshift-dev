@@ -37,7 +37,7 @@
     packages = forAllSystems (system: pkgs: let
       openshift-clients = import ./versions.nix { inherit system pkgs; };
     in openshift-clients // {
-      default = openshift-clients.oc_4_13;
+      default = openshift-clients.oc_4_14;
     });
   };
 }

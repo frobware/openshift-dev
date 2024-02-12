@@ -31,6 +31,13 @@ let
         x86_64-darwin = "sha256-z27LquIjm5V0aazHuw++pv97Nmd1HlAicLhG7oU37+Y=";
         x86_64-linux = "sha256-jAkWqHs36ojHEUdrd0wsxroYZKmuh3H+1abhfj+2ris=";      };
     };
+    "4.14.12" = {
+      sha256 = {
+        aarch64-darwin = "sha256-oUCds9jCbUTuPCQPeyMFUGODvjy38I5bocoh7AVGwe0=";
+        aarch64-linux = "sha256-18lqZ+d/bnFqZv10B84EsvmzfveQK4XeaML4RvV8BOA=";
+        x86_64-darwin = "sha256-KoD/9lsE3kuJl96k3BYVAjeJIESQW2zRO1RjTPsqSQ8=";
+        x86_64-linux = "sha256-4hLzoXJnkIo7yYRwnWp15x5hviVz8JNfO92d08Kv89I=";    };
+    };
   };
 
   systemFilenameMap = {
