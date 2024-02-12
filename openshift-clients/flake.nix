@@ -1,43 +1,18 @@
 {
-  description = "A flake providing multiple versions of the OpenShift client utility.";
+  description = "A flake providing multiple versions of the OpenShift client (oc).";
 
   outputs = { self, nixpkgs }:
   let
-    supportedSystems = [
-      "aarch64-darwin"
-      "aarch64-linux"
-      "x86_64-darwin"
-      "x86_64-linux"
-    ];
-
-    generateVersionedOpenShiftPackagesForSystem = system:
-    let
-      packageSet = import ./packages.nix {
-        system = system;
-        inputs = { inherit nixpkgs; };
-      };
-    in
-    packageSet;
-
-    dynamicOverlays = nixpkgs.lib.genAttrs supportedSystems (system: final: prev:
-    let
-      packageSet = generateVersionedOpenShiftPackagesForSystem system;
-    in
-    builtins.listToAttrs (map (name: { inherit name; value = packageSet.${name}; }) (builtins.attrNames packageSet))
+    forAllSystems = function: nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-darwin" "x86_64-linux" ] (
+      system: function system nixpkgs.legacyPackages.${system}
     );
-
-    forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
-      pkgs = self.inputs.nixpkgs.legacyPackages.${system};
-    });
-
-    setDefaultPackageForSystem = system: self.packages.${system}.oc_4_13;
   in {
-    packages = nixpkgs.lib.genAttrs supportedSystems generateVersionedOpenShiftPackagesForSystem;
-    overlays = dynamicOverlays;
-    defaultPackage = nixpkgs.lib.genAttrs supportedSystems setDefaultPackageForSystem;
-    devShells = forEachSupportedSystem ({ pkgs }: {
+    devShells = forAllSystems (system: pkgs: {
       default = pkgs.mkShell {
-        buildInputs = [ pkgs.nix-prefetch pkgs.nix ];
+        buildInputs = [
+          pkgs.nix
+          pkgs.nix-prefetch
+        ];
         packages = [
           (pkgs.writeScriptBin "fetch-hash" (builtins.readFile ./fetch-hash.sh))
         ];
@@ -49,6 +24,20 @@
           export NIX_PATH=nixpkgs=${pkgs.path}
         '';
       };
+    });
+
+    overlays = let
+      ocOverlay = final: prev: {
+        openshift-clients = self.packages.${final.system};
+      };
+    in {
+      default = ocOverlay;
+    };
+
+    packages = forAllSystems (system: pkgs: let
+      openshift-clients = import ./versions.nix { inherit system pkgs; };
+    in openshift-clients // {
+      default = openshift-clients.oc_4_13;
     });
   };
 }

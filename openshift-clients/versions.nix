@@ -1,6 +1,6 @@
-{ system, inputs, ... }:
+{ system, pkgs, ... }:
 
-with inputs.nixpkgs;
+with pkgs;
 let
   versions = {
     "4.10.64" = {
@@ -45,7 +45,7 @@ let
   };
 
   buildOpenShiftClientVersionFor = system: version: sha256: filename:
-  inputs.nixpkgs.legacyPackages.${system}.callPackage ./package.nix {
+  pkgs.callPackage ./package.nix {
     inherit version sha256 filename;
   };
 in
