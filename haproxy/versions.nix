@@ -1,6 +1,6 @@
-{ pkgs }:
+{ pkgs, ... }:
 
-with pkgs;
+with pkgs.lib;
 let
   makeHAProxyPackage = { version, sha256, patches ? [], debug ? false }:
   pkgs.callPackage ./package.nix {
@@ -36,7 +36,7 @@ let
       sha256 = "sha256-P1RZxaWOCzQ6MurvftW+2dP8KdiqnhSzbJLJafwqYNk=";
     };
   };
-in lib.listToAttrs (lib.flatten (lib.mapAttrsToList (version: value: let
+in listToAttrs (flatten (mapAttrsToList (version: value: let
   baseName = "ocp-haproxy-${builtins.replaceStrings ["."] ["_"] version}";
   basePackage = makeHAProxyPackage { inherit version; sha256 = value.sha256; patches = value.patches or []; debug = false; };
   debugPackage = makeHAProxyPackage { inherit version; sha256 = value.sha256; patches = value.patches or []; debug = true; };
