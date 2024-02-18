@@ -4,10 +4,16 @@
   outputs = { self, nixpkgs }:
   let
     forAllSystems = function: nixpkgs.lib.genAttrs [ "aarch64-darwin" "aarch64-linux" "x86_64-darwin" "x86_64-linux" ] (
-      system: function system nixpkgs.legacyPackages.${system}
+      system: function system
     );
   in {
-    devShells = forAllSystems (system: pkgs: {
+    checks = forAllSystems (system: {
+      build = self.packages.${system}.default;
+    });
+
+    devShells = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages."${system}";
+    in {
       default = pkgs.mkShell {
         buildInputs = [
           pkgs.nix
@@ -26,18 +32,19 @@
       };
     });
 
-    overlays = let
-      ocOverlay = final: prev: {
-        openshift-clients = self.packages.${final.system};
-      };
-    in {
-      default = ocOverlay;
+    overlays = {
+      default = (final: prev: let
+        ocPackages = import ./versions.nix { system = prev.system; pkgs = prev; };
+      in ocPackages);
     };
 
-    packages = forAllSystems (system: pkgs: let
-      openshift-clients = import ./versions.nix { inherit system pkgs; };
-    in openshift-clients // {
-      default = openshift-clients.oc_4_14;
+    packages = forAllSystems (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [ self.overlays.default ];
+      };
+    in {
+      default = pkgs.oc_4_14;
     });
   };
 }
