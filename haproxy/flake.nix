@@ -5,10 +5,16 @@
 
   outputs = { self, nixpkgs, ... }: let
     forAllSystems = function: nixpkgs.lib.genAttrs [ "aarch64-linux" "x86_64-linux" ] (
-      system: function system nixpkgs.legacyPackages.${system}
+      system: function system
     );
   in {
-    devShells = forAllSystems (system: pkgs: {
+    checks = forAllSystems (system: {
+      build = self.packages.${system}.default;
+    });
+
+    devShells = forAllSystems (system: let
+      pkgs = (import nixpkgs { inherit system; });
+    in {
       default = pkgs.mkShell {
         buildInputs = [
           self.packages.${system}.default.buildInputs
@@ -28,18 +34,19 @@
       };
     });
 
-    overlays = let
-      haproxyOverlay = final: prev: {
-        ocp-haproxy = self.packages.${final.system};
-      };
-    in {
-      default = haproxyOverlay;
+    overlays = {
+      default = (final: prev: let
+        haproxyVersions = import ./versions.nix { pkgs = prev; };
+      in haproxyVersions);
     };
 
-    packages = forAllSystems (system: pkgs: let
-      haproxyVersions = import ./versions.nix { inherit pkgs; };
-    in haproxyVersions // {
-      default = haproxyVersions.ocp-haproxy-2_8_5;
+    packages = forAllSystems (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [ self.overlays.default ];
+      };
+    in {
+      default = pkgs.ocp-haproxy-2_8_5;
     });
   };
 }
