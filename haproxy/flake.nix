@@ -46,7 +46,7 @@
         overlays = [ self.overlays.default ];
       };
     in {
-      default = pkgs.ocp-haproxy-2_8_5;
+      default = pkgs.ocp-haproxy-2_8_6;
     });
   };
 }

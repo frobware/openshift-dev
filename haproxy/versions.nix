@@ -35,6 +35,9 @@ let
     "2.8.5" = {
       sha256 = "sha256-P1RZxaWOCzQ6MurvftW+2dP8KdiqnhSzbJLJafwqYNk=";
     };
+    "2.8.6" = {
+      sha256 = "sha256-n9A0NovmaIC9hqMAwT3AO8E1Ie4mVIgN3fGSeFqijVE=";
+    };
   };
 in listToAttrs (flatten (mapAttrsToList (version: value: let
   baseName = "ocp-haproxy-${builtins.replaceStrings ["."] ["_"] version}";
