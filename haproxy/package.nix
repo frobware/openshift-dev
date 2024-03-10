@@ -1,4 +1,4 @@
-{ fetchurl, pkgs, stdenv, version, sha256, patches, target ? "linux-glibc", debug ? false }:
+{ fetchurl, lib, pkgs, stdenv, version, sha256, patches, target ? "linux-glibc", debug ? false }:
 
 let
   print-compiler-includes = pkgs.writeScriptBin "print-compiler-includes" "${builtins.readFile ./print-compiler-includes.pl}";
@@ -34,7 +34,8 @@ let
   };
 
   buildHAProxy = stdenv.mkDerivation (commonBuildAttrs // rec {
-    name = "ocp-haproxy-${version}${pkgs.lib.optionalString debug "-debug"}";
+    pname = "ocp-haproxy";
+    name = "${pname}${lib.optionalString debug "-debug"}-${version}";
 
     dontStrip = debug;
     hardeningDisable = if debug then [ "all" ] else [];
@@ -47,26 +48,34 @@ let
     makeFlags = commonMakeFlags ++ debugMakeFlags;
 
     buildPhase = ''
-      ${bear} make -j ${pkgs.lib.concatStringsSep " " makeFlags}
+      ${bear} make -j $NIX_BUILD_CORES ${pkgs.lib.concatStringsSep " " makeFlags}
     '';
 
     installPhase = if debug then ''
       package="haproxy-${version}"
       mkdir -p $out/bin $out/share/$package
-      install -m 0755 haproxy $out/bin/ocp-$package-debug
+      install -D -m 0755 haproxy $out/bin/ocp-haproxy-debug
       tar xf ${src} -C $out/share
       # Create a sentinel file for Emacs project.el.
       touch $out/share/$package/.project
       echo "directory $out/share/$package/src" > $out/share/$package/gdbinit
-      echo '#!/usr/bin/env bash' > $out/bin/ocp-$package-gdb
-      echo "${pkgs.gdb}/bin/gdb -x $out/share/$package/gdbinit \"\$@\"" >> $out/bin/ocp-$package-gdb
-      chmod 755 $out/bin/ocp-$package-gdb
+      echo '#!/usr/bin/env bash' > $out/bin/ocp-haproxy-gdb
+      echo "${pkgs.gdb}/bin/gdb -x $out/share/$package/gdbinit \"\$@\"" >> $out/bin/ocp-haproxy-gdb
+      chmod 755 $out/bin/ocp-haproxy-gdb
       ${pkgs.perl}/bin/perl ${print-compiler-includes}/bin/print-compiler-includes --clangd > $out/share/$package/.clangd
       echo "    - -I$out/share/$package/include" >> $out/share/$package/.clangd
       # Replace references to the ephemeral /build directory.
       ${pkgs.jq}/bin/jq '[.[] | .directory |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'") | .file |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'") | .output |= gsub("/build/" + "'"$package"'"; "'"$out/share/$package"'")]' compile_commands.json > "$out/share/$package/compile_commands.json"
     '' else ''
-      install -D -m 0755 haproxy $out/sbin/ocp-haproxy-${version}
+      install -D -m 0755 haproxy $out/bin/ocp-haproxy
     '';
+
+    meta = with lib; {
+      description = "OpenShift HAProxy builds";
+      homepage = "https://github.com/frobware/openshift-dev/tree/main/haproxy";
+      license = licenses.mit;
+      maintainers = with maintainers; [ frobware ];
+      mainProgram = "ocp-haproxy";
+    };
   });
 in buildHAProxy
