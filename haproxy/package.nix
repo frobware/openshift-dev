@@ -14,6 +14,7 @@ let
     "USE_PCRE=1"
     "USE_REGPARM=1"
     "USE_ZLIB=1"
+    "USE_SYSTEMD=1"
   ];
 
   src = fetchurl {
@@ -28,6 +29,7 @@ let
       libxcrypt
       openssl_3
       pcre
+      systemd
       zlib
     ];
     enableParallelBuilding = true;
