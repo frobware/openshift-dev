@@ -50,40 +50,31 @@
         { name = debugName; value = debugPackage; }
       ]) haproxyVersions));
 
-      haproxyMeta = final.stdenv.mkDerivation {
-        name = "ocp-haproxy-meta";
+      createMetaPackage = { name, isDebug ? false }: prev.stdenv.mkDerivation {
+        inherit name;
         buildInputs = [ final.makeWrapper ];
+
         buildCommand = let
           createSymlinkCommand = version: let
-            packageName = "ocp-haproxy-${builtins.replaceStrings ["."] ["_"] version}";
+            debugSuffix = prev.lib.optionalString isDebug "-debug";
+            packageName = "ocp-haproxy${debugSuffix}-${prev.lib.replaceStrings ["."] ["_"] version}";
             binDir = prev.lib.getBin (haproxyPackages.${packageName});
+            symlinkBaseName = "ocp-haproxy${debugSuffix}-${version}";
           in ''
-            ln -s ${binDir}/bin/ocp-haproxy $out/bin/ocp-haproxy-${version}
+            ln -s ${binDir}/bin/ocp-haproxy${debugSuffix} $out/bin/${symlinkBaseName}
+            ${prev.lib.optionalString isDebug ''
+              ln -s ${binDir}/bin/ocp-haproxy-gdb $out/bin/ocp-haproxy-gdb-${version}
+            ''}
           '';
-          symlinkCommands = builtins.concatStringsSep "\n" (map createSymlinkCommand versionsList);
+          symlinkCommands = prev.lib.concatStringsSep "\n" (map createSymlinkCommand versionsList);
         in ''
           mkdir -p $out/bin
           ${symlinkCommands}
         '';
       };
 
-      haproxyMetaDebug = final.stdenv.mkDerivation {
-        name = "ocp-haproxy-debug-meta";
-        buildInputs = [ final.makeWrapper ];
-        buildCommand = let
-          createSymlinkCommand = version: let
-            packageName = "ocp-haproxy-debug-${builtins.replaceStrings ["."] ["_"] version}";
-            binDir = prev.lib.getBin (haproxyPackages.${packageName});
-          in ''
-            ln -s ${binDir}/bin/ocp-haproxy-debug $out/bin/ocp-haproxy-debug-${version}
-            ln -s ${binDir}/bin/ocp-haproxy-gdb $out/bin/ocp-haproxy-gdb-${version}
-          '';
-          symlinkCommands = builtins.concatStringsSep "\n" (map createSymlinkCommand versionsList);
-        in ''
-          mkdir -p $out/bin
-          ${symlinkCommands}
-        '';
-      };
+      haproxyMeta = createMetaPackage { name = "ocp-haproxy-meta"; };
+      haproxyMetaDebug = createMetaPackage { name = "ocp-haproxy-debug-meta"; isDebug = true; };
     in haproxyPackages // { ocp-haproxy-meta = haproxyMeta; ocp-haproxy-debug-meta = haproxyMetaDebug; };
   in {
     checks = forAllSystems (system: {
