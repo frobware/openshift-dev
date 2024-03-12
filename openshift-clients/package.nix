@@ -1,4 +1,4 @@
-{ pkgs, fetchurl, installShellFiles, stdenv, version, sha256, filename }:
+{ fetchurl, installShellFiles, stdenv, version, sha256, filename }:
 
 stdenv.mkDerivation rec {
   inherit version sha256 filename;
@@ -22,27 +22,22 @@ stdenv.mkDerivation rec {
 
   installPhase = ''
     runHook preInstall
-    install -D ${pname}/oc $out/bin/oc-${pkgs.lib.versions.majorMinor version}
+    install -D ${pname}/oc $out/bin/oc
   '';
 
   fixupPhase = ''
     if [[ "$(uname -m)" = "x86_64" ]] && [[ "$(uname -s)" = "Linux" ]] ; then
-      patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) $out/bin/oc-${pkgs.lib.versions.majorMinor version}
+      patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) $out/bin/oc
     fi
   '';
 
   postInstall = ''
     # Generate and install the Bash completion file
-    $out/bin/oc-${pkgs.lib.versions.majorMinor version} completion bash > oc-${pkgs.lib.versions.majorMinor version}.bash
-    installShellCompletion --bash --name oc-${pkgs.lib.versions.majorMinor version} oc-${pkgs.lib.versions.majorMinor version}.bash
+    $out/bin/oc completion bash > oc.bash
+    installShellCompletion --bash --name oc oc.bash
 
     # Generate and install the Zsh completion file
-    $out/bin/oc-${pkgs.lib.versions.majorMinor version} completion zsh > _oc-${pkgs.lib.versions.majorMinor version}
-    installShellCompletion --zsh --name _oc-${pkgs.lib.versions.majorMinor version} _oc-${pkgs.lib.versions.majorMinor version}
-
-    # Replace the compdef line
-    substituteInPlace $out/share/zsh/site-functions/_oc-${pkgs.lib.versions.majorMinor version} \
-    --replace "#compdef oc" "#compdef oc-${pkgs.lib.versions.majorMinor version}" \
-    --replace "compdef _oc oc" "compdef _oc oc-${pkgs.lib.versions.majorMinor version}"
+    $out/bin/oc completion zsh > _oc
+    installShellCompletion --zsh --name _oc _oc
   '';
 }
